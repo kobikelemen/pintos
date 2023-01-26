@@ -21,7 +21,8 @@
 #define THREAD_MAGIC 0xcd6abf4b
 
 /* List of processes in THREAD_READY state, that is, processes
-   that are ready to run but not actually running. */
+   that are ready to run but not actually running. 
+   -> list_back() element has highest priority. */
 static struct list ready_list;
 
 /* List of all processes.  Processes are added to this list
@@ -251,10 +252,16 @@ thread_unblock (struct thread *t)
   ASSERT (is_thread (t));
 
   old_level = intr_disable ();
+
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  
+  thread_add_readylist (t);
   t->status = THREAD_READY;
+
   intr_set_level (old_level);
+
+  if (thread_highest_priority () > thread_current ()->priority)
+    thread_yield ();
 }
 
 /* Returns the name of the running thread. */
@@ -322,12 +329,13 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
-  cur->status = THREAD_READY;
+
+  thread_add_readylist (cur);
+
   schedule ();
   intr_set_level (old_level);
 }
+
 
 /* Invoke function 'func' on all threads, passing along 'aux'.
    This function must be called with interrupts off. */
@@ -346,11 +354,52 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
+
+/* Returns thread from ready_list that has highest priority. 
+   This is the back element for priority scheduling. */
+int thread_highest_priority (void)
+{
+  return list_entry (list_back (&ready_list), struct thread, elem)->priority;
+}
+
+/* read_list's list_less_func compare function for sorting 
+   list */
+bool thread_readylist_cmp (const struct list_elem *a, 
+                           const struct list_elem *b, 
+                           void *aux)
+{
+  struct thread *thread_a = list_entry (a, struct thread, elem);
+  struct thread *thread_b = list_entry (b, struct thread, elem);
+  if (thread_a->priority < thread_b->priority) {
+    return true;
+  }
+  return false;
+}
+
+/* Add thread to readylist in correct position. ready_list is 
+   ordered by increasing priority. Interrupts must be off. */
+void thread_add_readylist (struct thread *t)
+{
+
+  ASSERT (intr_get_level () == INTR_OFF);
+  
+  if (t != idle_thread) {
+    list_insert_ordered (&ready_list, &t->elem, 
+                         thread_readylist_cmp, NULL);
+  }
+  t->status = THREAD_READY;
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
 {
+  printf("setting thread %s to priority %i", thread_current ()->name, new_priority);
+  
   thread_current ()->priority = new_priority;
+
+  if (thread_highest_priority () > new_priority)
+    thread_yield ();
 }
 
 /* Returns the current thread's priority. */
