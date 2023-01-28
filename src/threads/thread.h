@@ -136,7 +136,7 @@ void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
-int thread_highest_priority (void);
+struct thread* thread_highest_priority (void);
 bool thread_readylist_cmp (const struct list_elem *a, 
                            const struct list_elem *b, 
                            void *aux);

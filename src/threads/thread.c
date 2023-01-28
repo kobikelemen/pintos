@@ -260,7 +260,7 @@ thread_unblock (struct thread *t)
 
   intr_set_level (old_level);
 
-  if (thread_highest_priority () > thread_current ()->priority)
+  if (thread_highest_priority ()->priority > thread_current ()->priority)
     thread_yield ();
 }
 
@@ -357,9 +357,9 @@ thread_foreach (thread_action_func *func, void *aux)
 
 /* Returns thread from ready_list that has highest priority. 
    This is the back element for priority scheduling. */
-int thread_highest_priority (void)
+struct thread* thread_highest_priority (void)
 {
-  return list_entry (list_back (&ready_list), struct thread, elem)->priority;
+  return list_entry (list_back (&ready_list), struct thread, elem);
 }
 
 /* read_list's list_less_func compare function for sorting 
@@ -398,7 +398,7 @@ thread_set_priority (int new_priority)
   
   thread_current ()->priority = new_priority;
 
-  if (thread_highest_priority () > new_priority)
+  if (thread_highest_priority ()->priority > new_priority)
     thread_yield ();
 }
 
@@ -617,9 +617,21 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
+  /* ORIGINAL
   struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
+  */
+
+  struct thread *cur = running_thread ();
+  struct thread *prev = NULL;
+  struct thread *next = thread_highest_priority ();
+ 
+  /* Don't change thread if highest ready thread has lower priority
+     than running one. Part of priority scheduling. */
+  if (cur->priority > next->priority) {
+   return;
+  }
 
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT (cur->status != THREAD_RUNNING);
