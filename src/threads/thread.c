@@ -250,7 +250,7 @@ thread_block (void)
   printf("in thread_block\n");
   // thread_print_readylist ();
 
-  thread_remove_readylist (cur);
+  // thread_remove_readylist (cur);
   schedule ();
 }
 
