@@ -247,9 +247,8 @@ thread_block (void)
 
   struct thread *cur = thread_current ();
   cur->status = THREAD_BLOCKED;
-  printf("in thread_block\n");
+  
   // thread_print_readylist ();
-
   // thread_remove_readylist (cur);
   schedule ();
 }
