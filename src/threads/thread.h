@@ -141,6 +141,7 @@ bool thread_readylist_cmp (const struct list_elem *a,
                            const struct list_elem *b, 
                            void *aux);
 void thread_add_readylist (struct thread *t);
+void thread_remove_readylist (struct thread* t);
 
 int thread_get_nice (void);
 void thread_set_nice (int);

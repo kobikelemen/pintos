@@ -114,6 +114,11 @@ thread_start (void)
   /* Start preemptive thread scheduling. */
   intr_enable ();
 
+  if (thread_current ()->status == THREAD_RUNNING) {
+    printf("main status is RUNNING in thread_start\n");
+  } else {
+    printf("main status NOT RUNNING in thread_start\n");
+  }
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
 }
@@ -232,7 +237,9 @@ thread_block (void)
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  thread_current ()->status = THREAD_BLOCKED;
+  struct thread *cur = thread_current ();
+  cur->status = THREAD_BLOCKED;
+  thread_remove_readylist (cur);
   schedule ();
 }
 
@@ -278,15 +285,15 @@ struct thread *
 thread_current (void) 
 {
   struct thread *t = running_thread ();
-  
+
   /* Make sure T is really a thread.
      If either of these assertions fire, then your thread may
      have overflowed its stack.  Each thread has less than 4 kB
      of stack, so a few big automatic arrays or moderate
      recursion can cause stack overflow. */
-  ASSERT (is_thread (t));
+  ASSERT (t != NULL);
+  ASSERT (t->magic == THREAD_MAGIC);
   ASSERT (t->status == THREAD_RUNNING);
-
   return t;
 }
 
@@ -389,6 +396,13 @@ void thread_add_readylist (struct thread *t)
   }
   t->status = THREAD_READY;
 }
+
+
+void thread_remove_readylist (struct thread* t)
+{
+  list_remove (&t->elem);
+}
+
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
@@ -558,7 +572,7 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+    return thread_highest_priority ();
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -625,13 +639,10 @@ schedule (void)
 
   struct thread *cur = running_thread ();
   struct thread *prev = NULL;
-  struct thread *next = thread_highest_priority ();
+  struct thread *next = next_thread_to_run ();
  
   /* Don't change thread if highest ready thread has lower priority
      than running one. Part of priority scheduling. */
-  if (cur->priority > next->priority) {
-   return;
-  }
 
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT (cur->status != THREAD_RUNNING);

@@ -118,9 +118,13 @@ main (void)
 #endif
 
   /* Start thread scheduler and enable interrupts. */
-  thread_start ();
+  printf("before thread_start\n");
+  thread_start (); // fails inside here
+  printf("after thread_start\n");
   serial_init_queue ();
+  printf("after serial_init_queue\n");
   timer_calibrate ();
+  printf("after timer_calibrate\n");
 
 #ifdef FILESYS
   /* Initialize file system. */
