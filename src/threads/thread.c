@@ -248,7 +248,6 @@ thread_block (void)
   struct thread *cur = thread_current ();
   cur->status = THREAD_BLOCKED;
   
-  // thread_print_readylist ();
   // thread_remove_readylist (cur);
   schedule ();
 }
@@ -277,8 +276,8 @@ thread_unblock (struct thread *t)
 
   intr_set_level (old_level);
 
-  if (thread_highest_priority ()->priority > thread_current ()->priority)
-    thread_yield ();
+  // if (thread_highest_priority ()->priority > thread_current ()->priority)
+  //   thread_yield ();
 }
 
 /* Returns the name of the running thread. */
@@ -484,6 +483,7 @@ idle (void *idle_started_ UNUSED)
   for (;;) 
     {
       /* Let someone else run. */
+      // thread_print_readylist ();
       intr_disable ();
       thread_block ();
 
