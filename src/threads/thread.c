@@ -113,12 +113,7 @@ thread_start (void)
 
   /* Start preemptive thread scheduling. */
   intr_enable ();
-
-  if (thread_current ()->status == THREAD_RUNNING) {
-    printf("main status is RUNNING in thread_start\n");
-  } else {
-    printf("main status NOT RUNNING in thread_start\n");
-  }
+  
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
 }
@@ -225,6 +220,19 @@ thread_create (const char *name, int priority,
   return tid;
 }
 
+
+void thread_print_readylist (void)
+{
+  printf("threads in readylist: \n");
+  struct list_elem *e;
+  for (e = list_begin (&ready_list); e != list_end (&ready_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, elem);
+      printf("%s  ", t->name);
+    }
+}
+
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
 
@@ -239,6 +247,9 @@ thread_block (void)
 
   struct thread *cur = thread_current ();
   cur->status = THREAD_BLOCKED;
+  printf("in thread_block\n");
+  // thread_print_readylist ();
+
   thread_remove_readylist (cur);
   schedule ();
 }
@@ -400,6 +411,7 @@ void thread_add_readylist (struct thread *t)
 
 void thread_remove_readylist (struct thread* t)
 {
+
   list_remove (&t->elem);
 }
 
