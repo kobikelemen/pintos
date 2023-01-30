@@ -119,14 +119,14 @@ sema_up (struct semaphore *sema)
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters))  
     {
-      /* Pop waiting thread with highest priority then unblock 
-         it then yield current thread to ensure new thread is 
+      /* Pop waiting thread with highest priority, then unblock 
+         it, then yield current thread to ensure new thread is 
          scheduled. */
       struct list_elem *max_e;
       max_e = list_max (&sema->waiters, 
                         thread_readylist_cmp, NULL);
       list_remove (max_e);
-      
+
       thread_unblock (list_entry (max_e, struct thread, elem));
       thread_yield ();
     }

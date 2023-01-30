@@ -399,6 +399,18 @@ bool thread_readylist_cmp (const struct list_elem *a,
   return false;
 }
 
+bool thread_readylist_cmp2 (const struct list_elem *a, 
+                           const struct list_elem *b, 
+                           void *aux)
+{
+  struct thread *thread_a = list_entry (a, struct thread, elem);
+  struct thread *thread_b = list_entry (b, struct thread, elem);
+  if (thread_a->priority <= thread_b->priority) {
+    return true;
+  }
+  return false;
+}
+
 /* Add thread to readylist in correct position. ready_list is 
    ordered by increasing priority. Interrupts must be off. */
 void thread_add_readylist (struct thread *t)
@@ -406,11 +418,12 @@ void thread_add_readylist (struct thread *t)
 
   ASSERT (intr_get_level () == INTR_OFF);
   
-  if (t != idle_thread) {
+  if (t != idle_thread) 
+  {
     list_insert_ordered (&ready_list, &t->elem, 
-                         thread_readylist_cmp, NULL);
+                         thread_readylist_cmp2, NULL);
   }
-  t->status = THREAD_READY;  
+   t->status = THREAD_READY; 
 }
 
 
@@ -648,12 +661,6 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
-  /* ORIGINAL
-  struct thread *cur = running_thread ();
-  struct thread *next = next_thread_to_run ();
-  struct thread *prev = NULL;
-  */
-
   struct thread *cur = running_thread ();
   struct thread *prev = NULL;
   struct thread *next = next_thread_to_run ();
