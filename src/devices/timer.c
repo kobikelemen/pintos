@@ -280,7 +280,7 @@ static bool
 too_many_loops (unsigned loops) 
 {
   // list_size (&ready_list);
-  thread_print_readylist ();
+  // thread_print_readylist ();
 
   /* Wait for a timer tick. */
   int64_t start = ticks;

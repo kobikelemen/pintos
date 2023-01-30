@@ -411,7 +411,6 @@ void thread_add_readylist (struct thread *t)
 
 void thread_remove_readylist (struct thread* t)
 {
-
   list_remove (&t->elem);
 }
 
@@ -419,9 +418,7 @@ void thread_remove_readylist (struct thread* t)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
-{
-  printf("setting thread %s to priority %i", thread_current ()->name, new_priority);
-  
+{  
   thread_current ()->priority = new_priority;
 
   if (thread_highest_priority ()->priority > new_priority)
