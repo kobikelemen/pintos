@@ -384,6 +384,12 @@ struct thread* thread_highest_priority (void)
   return list_entry (list_back (&ready_list), struct thread, elem);
 }
 
+
+struct thread* thread_pop_highest_priority (void)
+{
+  return list_entry (list_pop_back (&ready_list), struct thread, elem);
+}
+
 /* read_list's list_less_func compare function for sorting 
    list */
 bool thread_readylist_cmp (const struct list_elem *a, 

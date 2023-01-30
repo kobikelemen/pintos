@@ -16,6 +16,7 @@ void sema_down (struct semaphore *);
 bool sema_try_down (struct semaphore *);
 void sema_up (struct semaphore *);
 void sema_self_test (void);
+// struct thread* sema_highest_priority_waiter (struct list *waiters);
 
 /* Lock. */
 struct lock 
