@@ -279,11 +279,6 @@ thread_unblock (struct thread *t)
   t->status = THREAD_READY;
 
   intr_set_level (old_level);
-
-  // thread_yield ();
-
-  // if (thread_highest_priority ()->priority > thread_current ()->priority)
-  //   thread_yield ();
 }
 
 /* Returns the name of the running thread. */
