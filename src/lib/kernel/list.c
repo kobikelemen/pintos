@@ -299,9 +299,13 @@ list_size (struct list *list)
 {
   struct list_elem *e;
   size_t cnt = 0;
-
-  for (e = list_begin (list); e != list_end (list); e = list_next (e))
+  printf("list size\n");
+  for (e = list_begin (list); e != list_end (list); e = list_next (e)) {
+    printf("%u\n", cnt);
     cnt++;
+  }
+  printf("end of list size\n");
+    
   return cnt;
 }
 

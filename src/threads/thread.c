@@ -23,7 +23,8 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. 
    -> list_back() element has highest priority. */
-static struct list ready_list;
+
+// static struct list ready_list;
 
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
@@ -229,8 +230,9 @@ void thread_print_readylist (void)
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, elem);
-      printf("%s  ", t->name);
+      printf("%s\n", t->name);
     }
+  printf("\n");
 }
 
 /* Puts the current thread to sleep.  It will not be scheduled
@@ -403,7 +405,7 @@ void thread_add_readylist (struct thread *t)
     list_insert_ordered (&ready_list, &t->elem, 
                          thread_readylist_cmp, NULL);
   }
-  t->status = THREAD_READY;
+  t->status = THREAD_READY;  
 }
 
 
@@ -611,6 +613,7 @@ thread_schedule_tail (struct thread *prev)
 
   /* Mark us as running. */
   cur->status = THREAD_RUNNING;
+  thread_remove_readylist(cur);
 
   /* Start new time slice. */
   thread_ticks = 0;

@@ -51,22 +51,28 @@ timer_calibrate (void)
   unsigned high_bit, test_bit;
 
   ASSERT (intr_get_level () == INTR_ON);
-  printf ("Calibrating timer...  ");
+  printf ("Calibrating timer...  \n");
 
   /* Approximate loops_per_tick as the largest power-of-two
      still less than one timer tick. */
   loops_per_tick = 1u << 10;
   while (!too_many_loops (loops_per_tick << 1)) 
     {
+      printf("LOOPING\n");
       loops_per_tick <<= 1;
       ASSERT (loops_per_tick != 0);
+
     }
+  printf("after first loop\n");
 
   /* Refine the next 8 bits of loops_per_tick. */
   high_bit = loops_per_tick;
-  for (test_bit = high_bit >> 1; test_bit != high_bit >> 10; test_bit >>= 1)
+  for (test_bit = high_bit >> 1; test_bit != high_bit >> 10; test_bit >>= 1) {
+    list_size (&ready_list);
     if (!too_many_loops (high_bit | test_bit))
       loops_per_tick |= test_bit;
+  }
+    
 
   printf ("%'"PRIu64" loops/s.\n", (uint64_t) loops_per_tick * TIMER_FREQ);
 }
@@ -273,6 +279,9 @@ timer_interrupt (struct intr_frame *args UNUSED)
 static bool
 too_many_loops (unsigned loops) 
 {
+  // list_size (&ready_list);
+  thread_print_readylist ();
+
   /* Wait for a timer tick. */
   int64_t start = ticks;
   while (ticks == start)
