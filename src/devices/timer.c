@@ -58,12 +58,10 @@ timer_calibrate (void)
   loops_per_tick = 1u << 10;
   while (!too_many_loops (loops_per_tick << 1)) 
     {
-      printf("LOOPING\n");
       loops_per_tick <<= 1;
       ASSERT (loops_per_tick != 0);
 
     }
-  printf("after first loop\n");
 
   /* Refine the next 8 bits of loops_per_tick. */
   high_bit = loops_per_tick;
