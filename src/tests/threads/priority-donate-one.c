@@ -30,13 +30,21 @@ test_priority_donate_one (void)
   ASSERT (thread_get_priority () == PRI_DEFAULT);
 
   lock_init (&lock);
+  // printf("lock list size after init: %i\n", list_size(&lock.donations));
   lock_acquire (&lock);
+  // printf("lock list size HERE: %i\n", list_size(&lock.donations));
+  // thread_print_threadlist (&lock.donations);
+
   thread_create ("acquire1", PRI_DEFAULT + 1, acquire1_thread_func, &lock);
+  printf("after first create\n");
+  // printf("lock list size HEREEEE: %zu\n", list_size(&lock.donations));
+  thread_print_threadlist (&lock.donations);
   msg ("This thread should have priority %d.  Actual priority: %d.",
        PRI_DEFAULT + 1, thread_get_priority ());
   thread_create ("acquire2", PRI_DEFAULT + 2, acquire2_thread_func, &lock);
   msg ("This thread should have priority %d.  Actual priority: %d.",
        PRI_DEFAULT + 2, thread_get_priority ());
+  thread_print_threadlist (&lock.donations);
   lock_release (&lock);
   msg ("acquire2, acquire1 must already have finished, in that order.");
   msg ("This should be the last line before finishing this test.");
@@ -46,7 +54,8 @@ static void
 acquire1_thread_func (void *lock_) 
 {
   struct lock *lock = lock_;
-
+  printf ("INSIDE acquire1_thread_func()\n");
+  thread_print_threadlist (&lock->donations);
   lock_acquire (lock);
   msg ("acquire1: got the lock");
   lock_release (lock);

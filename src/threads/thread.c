@@ -224,16 +224,30 @@ thread_create (const char *name, int priority,
 }
 
 
-void thread_print_readylist (void)
+void thread_print_threadlist (struct list *l)
 {
-  printf("threads in readylist: \n");
+  printf("threads in list: \n");
+  printf(" tail: %s\n", list_entry (list_end (l), struct thread, elem)->name);
+  printf("before tail: %s\n", list_entry (list_end (l)->prev, struct thread, elem)->name);
   struct list_elem *e;
-  for (e = list_begin (&ready_list); e != list_end (&ready_list);
+  for (e = list_begin (l); e != list_end (l);
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, elem);
       printf("%s\n", t->name);
+      printf("prev.next: %s\n",list_entry (list_next (l)->prev, struct thread, elem)->name);
+      if (e == list_end(l)) {
+        printf("tail\n");
+      }
+      if (t == NULL) {
+        printf("NULL\n");
+      }
+      if (list_next (e) == list_end (l)) {
+        printf("next is tail\n");
+      }
+      
     }
+  printf("END OF PRINTING\n");
   printf("\n");
 }
 
@@ -385,8 +399,8 @@ struct thread* thread_pop_highest_priority (void)
   return list_entry (list_pop_back (&ready_list), struct thread, elem);
 }
 
-/* read_list's list_less_func compare function for sorting 
-   list */
+/* read_list's list_less_func compare function used for
+   list_max() with ready_list in sema_up(). */
 bool thread_readylist_cmp (const struct list_elem *a, 
                            const struct list_elem *b, 
                            void *aux)
@@ -399,6 +413,8 @@ bool thread_readylist_cmp (const struct list_elem *a,
   return false;
 }
 
+/* Second version of same function above except compares
+   using <= instead of < . Used in thread_add_readylist(). */
 bool thread_readylist_cmp2 (const struct list_elem *a, 
                            const struct list_elem *b, 
                            void *aux)
@@ -417,7 +433,7 @@ void thread_add_readylist (struct thread *t)
 {
 
   ASSERT (intr_get_level () == INTR_OFF);
-  
+
   if (t != idle_thread) 
   {
     list_insert_ordered (&ready_list, &t->elem, 
@@ -433,7 +449,7 @@ void thread_remove_readylist (struct thread* t)
 }
 
 
-/* Sets the current thread's priority to NEW_PRIORITY. */
+/* Sets the current thread's priority to new_priority. */
 void
 thread_set_priority (int new_priority) 
 {  

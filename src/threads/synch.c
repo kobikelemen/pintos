@@ -191,6 +191,7 @@ lock_init (struct lock *lock)
 {
   ASSERT (lock != NULL);
 
+  list_init (&lock->donations);
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
 }
@@ -209,9 +210,11 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
-
+  
+  donate_if_needed (lock);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
+  
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -245,6 +248,7 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
+  donate_return (lock);
   lock->holder = NULL;
   sema_up (&lock->semaphore);
 }
@@ -259,6 +263,69 @@ lock_held_by_current_thread (const struct lock *lock)
 
   return lock->holder == thread_current ();
 }
+
+/* Donates current threads priority to holder thread. */
+void donate_priority (struct thread *cur, struct thread *holder)
+{
+  
+  holder->priority = cur->priority;
+  cur->amount_donated = cur->priority - holder->priority;
+  cur->priority -= cur->amount_donated;
+  
+  // if (cur->priority + holder->priority >= PRI_MAX) 
+  //  {
+  //    holder->priority = PRI_MAX;
+  //    cur->amount_donated = PRI_MAX - holder->priority;
+  //    cur->priority -= cur->amount_donated;
+  //  } 
+  // else 
+  //  {
+  //    holder->priority += cur->priority;
+  //    cur->amount_donated = cur->priority;
+  //    cur->priority = 0;
+  //  }
+}
+
+/* Donates priority to thread that's holding the lock
+   if holding thread has too low priority to be scheduled. */
+void donate_if_needed (struct lock *l)
+{
+  // struct thread *cur = thread_current ();
+  // struct thread *holder = l->holder;
+  if (l->holder == NULL)
+    return;
+
+  if (thread_current ()->priority > l->holder->priority)
+   {
+      donate_priority (thread_current (), l->holder);
+      // printf("APPENDING TO DONATIONS\n");
+      // list_push_back (&l->donations, &holder->elem);
+      list_push_back (&l->donations, &thread_current ()->elem);
+      // printf("donations size: %s\n", list_size(&l->donations));
+
+   }
+}
+
+/* Returns all donations given to lock holder. */
+void donate_return (struct lock *l)
+{
+  struct list_elem *e;
+  struct thread *cur = thread_current ();
+
+  /* Give each donation back to thread that donated. */
+  for (e = list_begin (&l->donations); 
+       e != list_end (&l->donations); e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, elem);
+      cur->priority -= t->amount_donated;
+      t->priority += t->amount_donated;
+      t->amount_donated = 0;
+    }
+
+  /* Clear donations list associated with lock. */
+  list_init (&l->donations);
+}
+
 
 /* One semaphore in a list. */
 struct semaphore_elem 

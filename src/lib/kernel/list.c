@@ -301,8 +301,11 @@ list_size (struct list *list)
   size_t cnt = 0;
   // printf("list size\n");
   for (e = list_begin (list); e != list_end (list); e = list_next (e)) {
-    // printf("%u\n", cnt);
+    printf("%zu\n", cnt);
     cnt++;
+    // if (cnt == 2) {
+    //   return;
+    // }
   }
   // printf("end of list size\n");
     

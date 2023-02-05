@@ -96,9 +96,13 @@ struct thread
     struct list_elem timer_wait_elem;   /* List element of sleeping threads waiting 
                                           for timer interupt */
    int64_t sleep_ticks;                 /* How many ticks to sleep thread for */
+   int amount_donated;                  /* If waiting for a lock, how much 
+                                           priority has been donated */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+
+   //  struct list_elem donation_elem;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -147,7 +151,7 @@ bool thread_readylist_cmp (const struct list_elem *a,
                            void *aux);
 void thread_add_readylist (struct thread *t);
 void thread_remove_readylist (struct thread* t);
-void thread_print_readylist (void);
+void thread_print_threadlist (struct list *l);
 
 int thread_get_nice (void);
 void thread_set_nice (int);
