@@ -102,7 +102,7 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-   //  struct list_elem donation_elem;
+    struct list_elem donation_elem;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -152,6 +152,7 @@ bool thread_readylist_cmp (const struct list_elem *a,
 void thread_add_readylist (struct thread *t);
 void thread_remove_readylist (struct thread* t);
 void thread_print_threadlist (struct list *l);
+void thread_order_readylist (void);
 
 int thread_get_nice (void);
 void thread_set_nice (int);

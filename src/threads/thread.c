@@ -227,15 +227,15 @@ thread_create (const char *name, int priority,
 void thread_print_threadlist (struct list *l)
 {
   printf("threads in list: \n");
-  printf(" tail: %s\n", list_entry (list_end (l), struct thread, elem)->name);
-  printf("before tail: %s\n", list_entry (list_end (l)->prev, struct thread, elem)->name);
+  printf(" tail: %s\n", list_entry (list_end (l), struct thread, donation_elem)->name);
+  printf("before tail: %s\n", list_entry (list_end (l)->prev, struct thread, donation_elem)->name);
   struct list_elem *e;
   for (e = list_begin (l); e != list_end (l);
        e = list_next (e))
     {
-      struct thread *t = list_entry (e, struct thread, elem);
+      struct thread *t = list_entry (e, struct thread, donation_elem);
       printf("%s\n", t->name);
-      printf("prev.next: %s\n",list_entry (list_next (l)->prev, struct thread, elem)->name);
+      printf("prev.next: %s\n",list_entry (list_next (l)->prev, struct thread, donation_elem)->name);
       if (e == list_end(l)) {
         printf("tail\n");
       }
@@ -349,7 +349,7 @@ thread_exit (void)
   NOT_REACHED ();
 }
 
-/* Yields the CPU.  The current thread is not put to sleep and
+/* Yields the CPU.  The current thread is not j put to sleep and
    may be scheduled again immediately at the scheduler's whim. */
 void
 thread_yield (void) 
@@ -385,6 +385,11 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
+
+void thread_order_readylist (void)
+{
+  list_sort (&ready_list, thread_readylist_cmp, NULL);
+}
 
 /* Returns thread from ready_list that has highest priority. 
    This is the back element for priority scheduling. */

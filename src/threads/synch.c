@@ -248,6 +248,7 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
+  
   donate_return (lock);
   lock->holder = NULL;
   sema_up (&lock->semaphore);
@@ -298,9 +299,10 @@ void donate_if_needed (struct lock *l)
   if (thread_current ()->priority > l->holder->priority)
    {
       donate_priority (thread_current (), l->holder);
+      thread_order_readylist ();
       // printf("APPENDING TO DONATIONS\n");
       // list_push_back (&l->donations, &holder->elem);
-      list_push_back (&l->donations, &thread_current ()->elem);
+      list_push_back (&l->donations, &thread_current ()->donation_elem);
       // printf("donations size: %s\n", list_size(&l->donations));
 
    }
@@ -316,11 +318,13 @@ void donate_return (struct lock *l)
   for (e = list_begin (&l->donations); 
        e != list_end (&l->donations); e = list_next (e))
     {
-      struct thread *t = list_entry (e, struct thread, elem);
+      struct thread *t = list_entry (e, struct thread, donation_elem);
       cur->priority -= t->amount_donated;
       t->priority += t->amount_donated;
       t->amount_donated = 0;
     }
+
+  thread_order_readylist ();
 
   /* Clear donations list associated with lock. */
   list_init (&l->donations);
