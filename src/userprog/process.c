@@ -20,6 +20,8 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+void push_args (char *file_nme, char **esp);
+
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -34,6 +36,7 @@ process_execute (const char *file_name)
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
+    
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
@@ -45,12 +48,28 @@ process_execute (const char *file_name)
   return tid;
 }
 
+
+int size (char *s) {
+  int i = 0;
+  while (*s != '\0') {
+    printf("%c", *s);
+    s++;
+    i += 1;
+  }
+  printf("\n%i\n", i);
+  return i;
+}
+
+
 /* A thread function that loads a user process and starts it
    running. */
 static void
 start_process (void *file_name_)
 {
   char *file_name = file_name_;
+  
+  ASSERT (sizeof (file_name) <= 128); /* Max command length 
+                                         is 128 bytes */
   struct intr_frame if_;
   bool success;
 
@@ -59,12 +78,29 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  
+  /* 2 copies: one for getting first arg, other for pushing args 
+     to stack. */
+  char file_name_first_arg[128];
+  char file_name_cpy[128];
+  strlcpy (file_name_first_arg, file_name, size (file_name) + 1);
+  strlcpy (file_name_cpy, file_name, size (file_name) + 1);
+  
+  char *save_ptr;
+  /* First arg is file name. */
+  char *first_arg = strtok_r (file_name_first_arg, " ", &save_ptr); 
+
+  success = load (first_arg, &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
     thread_exit ();
+
+  /* IMPORTANT: file_name_cpy is altered by push_args */
+  push_args (&file_name_cpy, &if_.esp); 
+
+  hex_dump (0, if_.esp, 300, true);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -470,4 +506,78 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+
+/* Count number of arguments. */
+int cnt_args(char *str)
+{
+  int num_args = 0; /* 1 less than number of words since first 
+                       word is file name not argument. */
+  for (char c = *str; c != '\0'; str++) {
+    c = *str;
+    if (c == ' ') {
+      num_args ++;
+      while (*(str + 1) == ' ') {
+        str ++;
+      }
+    }
+  }
+  return num_args;
+}
+
+
+/* Pushes arguments from command file_nme onto the stack.
+   See task 1 in spec for more info. */
+void push_args (char *file_nme, char **esp)
+{
+  int i = 0;
+  char *save_ptr;
+  char *token;
+  int num_args = cnt_args (file_nme);
+  char * arg_addresses[num_args];
+  
+  /* Push args onto stack. */
+  for (token = strtok_r (file_nme, " ", &save_ptr); token != NULL;
+       token = strtok_r (NULL, " ", &save_ptr))
+    {
+      /* Push token onto stack. */
+      size_t len = strlen (token) + 1;
+      *esp -= len;
+      memcpy (*esp, token, len);
+      
+      /* Save pointer to argument. */
+      arg_addresses[i] = *esp;
+      i ++;
+    }
+
+  /* Point to start of first argument (which is pushed last). */
+  char **argv = *esp;
+
+  /* Total number of arguments. */
+  int argc = num_args;
+
+  /* First push NULL list end. */
+  int pointer_size = sizeof (*esp);
+  *esp -= pointer_size; /* Size of pointer on this system. */
+  *((uint32_t*) *esp) = 0;
+
+  /* Push pointers to arguments in reverse direction. */
+  for (; i > 0; i --) 
+   {
+    *esp -= pointer_size; /* Size of pointer on this system. */
+    *((void**) *esp) = arg_addresses[i];
+   }
+
+  /* Push argv. */
+  *esp -= pointer_size;
+  *((void**) *esp) = (*esp + 4);
+
+  /* Push argc onto stack, 4 is sizeof int */
+  *esp -= 4;
+  *((int*) *esp) = argc;
+
+  /* Push arbitrary return address. */
+  *esp -= pointer_size;
+  *((int*) *esp) = 0;
 }
