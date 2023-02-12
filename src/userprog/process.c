@@ -36,7 +36,7 @@ process_execute (const char *file_name)
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
-    
+
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
@@ -52,11 +52,9 @@ process_execute (const char *file_name)
 int size (char *s) {
   int i = 0;
   while (*s != '\0') {
-    printf("%c", *s);
     s++;
     i += 1;
   }
-  printf("\n%i\n", i);
   return i;
 }
 
@@ -89,18 +87,20 @@ start_process (void *file_name_)
   char *save_ptr;
   /* First arg is file name. */
   char *first_arg = strtok_r (file_name_first_arg, " ", &save_ptr); 
-
+  
   success = load (first_arg, &if_.eip, &if_.esp);
-
+  
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success) 
+  if (!success) {
     thread_exit ();
-
+  }
+    
+  
   /* IMPORTANT: file_name_cpy is altered by push_args */
   push_args (&file_name_cpy, &if_.esp); 
 
-  hex_dump (0, if_.esp, 300, true);
+  // hex_dump (0, if_.esp, 300, true);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -124,7 +124,10 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  return -1;
+  while (true) {
+
+  }
+  // return -1;
 }
 
 /* Free the current process's resources. */
@@ -277,7 +280,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
       printf ("load: %s: error loading executable\n", file_name);
       goto done; 
     }
-
   /* Read program headers. */
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
@@ -329,12 +331,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
                 }
               if (!load_segment (file, file_page, (void *) mem_page,
                                  read_bytes, zero_bytes, writable))
-                goto done;
+                {
+                  goto done;
+                }
             }
           else
             goto done;
           break;
         }
+      
     }
 
   /* Set up stack. */
@@ -431,11 +436,9 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
          and zero the final PAGE_ZERO_BYTES bytes. */
       size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
-      
       /* Check if virtual page already allocated */
       struct thread *t = thread_current ();
       uint8_t *kpage = pagedir_get_page (t->pagedir, upage);
-      
       if (kpage == NULL){
         
         /* Get a new page of memory. */
@@ -527,7 +530,7 @@ int cnt_args(char *str)
 }
 
 
-/* Pushes arguments from command file_nme onto the stack.
+/* Pushes arguments from command file_nme onto the new process stack.
    See task 1 in spec for more info. */
 void push_args (char *file_nme, char **esp)
 {
@@ -536,7 +539,6 @@ void push_args (char *file_nme, char **esp)
   char *token;
   int num_args = cnt_args (file_nme);
   char * arg_addresses[num_args];
-  
   /* Push args onto stack. */
   for (token = strtok_r (file_nme, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
@@ -545,17 +547,15 @@ void push_args (char *file_nme, char **esp)
       size_t len = strlen (token) + 1;
       *esp -= len;
       memcpy (*esp, token, len);
-      
-      /* Save pointer to argument. */
+      /* Save pointer to arg. */
       arg_addresses[i] = *esp;
       i ++;
     }
-
+  
   /* Point to start of first argument (which is pushed last). */
   char **argv = *esp;
-
   /* Total number of arguments. */
-  int argc = num_args;
+  int argc = i;
 
   /* First push NULL list end. */
   int pointer_size = sizeof (*esp);
@@ -563,7 +563,7 @@ void push_args (char *file_nme, char **esp)
   *((uint32_t*) *esp) = 0;
 
   /* Push pointers to arguments in reverse direction. */
-  for (; i > 0; i --) 
+  for (i = i-1; i >= 0; i --) 
    {
     *esp -= pointer_size; /* Size of pointer on this system. */
     *((void**) *esp) = arg_addresses[i];

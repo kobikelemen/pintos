@@ -118,6 +118,24 @@ pagedir_set_page (uint32_t *pd, void *upage, void *kpage, bool writable)
     return false;
 }
 
+void terminate_and_free (uint32_t *pd, const void *uaddr)
+{
+  // pagedir_clear_page (pd, uaddr);
+  process_exit ();
+  thread_exit ();
+  // this is called from the user process so can just 
+  // kill current process i think
+
+  /* if this was executed as part of kernel, terminate process:
+    1. get processes thread struct 
+    2. set thread to dying
+    3. schedule new process
+  
+   */
+}
+
+
+
 /* Looks up the physical address that corresponds to user virtual
    address UADDR in PD.  Returns the kernel virtual address
    corresponding to that physical address, or a null pointer if
@@ -129,11 +147,28 @@ pagedir_get_page (uint32_t *pd, const void *uaddr)
 
   ASSERT (is_user_vaddr (uaddr));
   
+
+  // if (uaddr == NULL) {
+  //   //terminate offending process & free resources
+  //   terminate_and_free (pd, uaddr);
+  // }
+
+  // if (!is_user_vaddr (uaddr)) {
+  //   //terminate offending process & free resources
+  //   terminate_and_free (pd, uaddr);
+  // }
+
+  
+  
   pte = lookup_page (pd, uaddr, false);
   if (pte != NULL && (*pte & PTE_P) != 0)
     return pte_get_page (*pte) + pg_ofs (uaddr);
-  else
+  else {
+    //terminate offending process & free resources
+    // terminate_and_free (pd, uaddr);
     return NULL;
+  }
+    
 }
 
 /* Marks user virtual page UPAGE "not present" in page
