@@ -87,7 +87,7 @@ start_process (void *file_name_)
   char *save_ptr;
   /* First arg is file name. */
   char *first_arg = strtok_r (file_name_first_arg, " ", &save_ptr); 
-  
+  strlcpy (thread_current ()->name, first_arg, size (first_arg)+1);
   success = load (first_arg, &if_.eip, &if_.esp);
   
   /* If load failed, quit. */
@@ -95,12 +95,9 @@ start_process (void *file_name_)
   if (!success) {
     thread_exit ();
   }
-    
   
   /* IMPORTANT: file_name_cpy is altered by push_args */
   push_args (&file_name_cpy, &if_.esp); 
-
-  // hex_dump (0, if_.esp, 300, true);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -125,8 +122,11 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   while (true) {
-
+    if (!thread_exists (child_tid)) 
+      return 0;
+    thread_yield ();
   }
+
   // return -1;
 }
 
