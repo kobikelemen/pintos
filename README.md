@@ -13,5 +13,5 @@ Up to here, all code that ran using Pintos was part of the OS kernel. A key part
 ## Timer [Done]
 The goal of this part is to improve the thread sleep functionality to switch to a new thread instead of busy waiting like it currently does.
 
-## Virtual Memory [In Progress]
+## Virtual Memory [Done]
 The final part is implementing virtual memory. Pintos currently splits main memory into pages, and gives each program an area of virtual memory that corresponds to these pages. However, the memory a program can use is limited by the size of main memory. To overcome this, pages that are assigned to a program but not currently in use can be swapped out to disk, and when needed they can be brought back to main memory. This means that programs can now use practically unlimited memory. The goal of this part of the project is to implement this.
